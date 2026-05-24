@@ -1,84 +1,79 @@
-# OpenGL Java Class (LWJGL)
+# Flappy Bird OpenGL (LWJGL / Java)
 
-Proyecto base de OpenGL en Java usando **LWJGL + GLFW**, con dos entradas:
+Proyecto del primer parcial. Mini-juego estilo Flappy Bird hecho con **Java + LWJGL + OpenGL 3.3 core profile**, en perspectiva 2D usando coordenadas NDC.
 
-- `com.graphics.App` (triángulo básico)
-- `com.graphics.AppMovimientoTeclado` (triángulo movible con teclado)
+## Integrantes
+
+- Arlin Manuel
+
+## Características
+
+- **Pájaro compuesto por figuras geométricas:** cuerpo (círculo), pico (triángulo), ala animada (triángulo oscilante), cola (triángulo) y ojo (círculo blanco + pupila negra). El pájaro se inclina arriba/abajo según su velocidad vertical.
+- **Modo 2 jugadores** simultáneos en la misma ventana. Cada pájaro tiene su propio color, puntaje y estado vivo/muerto. La partida termina sólo cuando **ambos** mueren.
+- **Dificultad progresiva:** cada 5 puntos del jugador con mayor puntaje sube un nivel; la velocidad y la frecuencia de tuberías aumentan dentro de límites que mantienen el juego jugable. El nivel actual se muestra en el HUD y en el título de la ventana.
+- **Interfaz mejorada:** cielo con degradado vertical, sol con halo, nubes con parallax, suelo con franja de pasto, panel de marcador con dígitos tipo "display de 7 segmentos" por jugador, indicador de vivo/muerto y pantallas de inicio / game over con paneles superpuestos.
+
+## Controles
+
+| Acción | Jugador 1 | Jugador 2 |
+| --- | --- | --- |
+| Saltar / Iniciar | `ESPACIO` | `W` o `Flecha Arriba` |
+| Reiniciar (en Game Over) | `R`, `ENTER` o `ESPACIO` | mismas |
+| Salir | `ESC` | `ESC` |
 
 ## Requisitos
 
-- Java 17 o superior
+- Java 17+
 - Maven 3.9+
-- macOS (este `pom.xml` ya incluye `natives-macos` y `natives-macos-arm64`)
+- LWJGL 3.3.3 (descargado automáticamente por Maven)
+- Sistema operativo Windows (el `pom.xml` actual trae `natives-windows`)
 
-## 1) Crear un proyecto Maven (desde cero)
+## Compilar y ejecutar
 
-Si quieres crear un proyecto nuevo igual a este formato:
-
-```bash
-mvn archetype:generate \
-  -DgroupId=com.graphics \
-  -DartifactId=opengl-java-class \
-  -DarchetypeArtifactId=maven-archetype-quickstart \
-  -DinteractiveMode=false
-```
-
-Luego entra al proyecto:
+Desde la carpeta del proyecto (donde está `pom.xml`):
 
 ```bash
-cd opengl-java-class
+mvn clean compile exec:exec -DmainClass=com.graphics.AppFlappyBird
 ```
 
-Después debes:
-
-1. Reemplazar el `pom.xml` por uno con dependencias de LWJGL/GLFW/OpenGL.
-2. Crear las clases en `src/main/java/com/graphics/`.
-
-## 2) Ubicarte en este proyecto
-
-En este repo en particular, la carpeta que contiene el `pom.xml` es:
+O, en dos pasos:
 
 ```bash
-cd "/Users/kenjikv/Documents/Personal/Personal/ProgramacionGrafica/OpenGL/Clase 01/opengl-java-class/opengl-java-class"
+mvn clean compile
+mvn exec:exec -DmainClass=com.graphics.AppFlappyBird
 ```
 
-## 3) Compilar
+## Estructura del código
 
-```bash
-mvn compile
+El juego está separado en clases por responsabilidad. Todo el código está comentado en español.
+
+```
+src/main/java/com/graphics/
+├── AppFlappyBird.java              # Entry point: crea ventana, inicializa GLFW/OpenGL, corre el loop
+└── flappy/
+    ├── Game.java                   # Estado global, lista de pájaros/tuberías, dificultad, pantallas
+    ├── Bird.java                   # Pájaro: física, animación, render compuesto
+    ├── Pipe.java                   # Tubería: render, movimiento, colisión AABB
+    ├── Renderer.java               # Shaders, VAOs/VBOs y primitivas (rect / círculo / triángulo)
+    ├── InputManager.java           # Lectura de teclado y detección de flancos
+    └── Hud.java                    # Marcador, paneles y dígitos de 7 segmentos
 ```
 
-## 4) Ejecutar cada app por separado
+### Notas técnicas
 
-### Ejecutar `App` (triángulo base)
+- Un único **programa de shaders** con uniforms para `uOffset` (traslación), `uScale` (escala), `uRot` (rotación) y `uColor` / `uColor2` / `uUseGradient` (color sólido o degradado vertical).
+- Tres **mallas reutilizables** subidas una sola vez al inicio:
+  - Quad unitario (rectángulos, fondo, tuberías, suelo).
+  - Triangle fan unitario (círculos: cuerpo, ojo, sol, nubes).
+  - Triángulo unitario (pico, ala, cola).
+- Las **partes del pájaro** se dibujan rotando manualmente sus offsets locales por la rotación global del pájaro antes de pasar la traslación al shader. Eso permite que la composición rote como un solo cuerpo.
+- La **dificultad** se recalcula cada frame en función del puntaje más alto entre los dos jugadores. La velocidad de las tuberías se interpola entre 0.62 y 1.40 y el intervalo de spawn entre 1.5s y 0.9s.
 
-```bash
-mvn compile exec:exec -DmainClass=com.graphics.App
-```
+## Cambios respecto a la versión base
 
-Tambien puedes ejecutarla con la clase por defecto definida en `pom.xml`:
-
-```bash
-mvn exec:exec
-```
-
-### Ejecutar `AppMovimientoTeclado` (mover con WASD/flechas)
-
-```bash
-mvn compile exec:exec -DmainClass=com.graphics.AppMovimientoTeclado
-```
-
-## Controles en `AppMovimientoTeclado`
-
-- `W` / `Flecha Arriba`: mover arriba
-- `S` / `Flecha Abajo`: mover abajo
-- `A` / `Flecha Izquierda`: mover izquierda
-- `D` / `Flecha Derecha`: mover derecha
-- `ESC`: cerrar ventana
-
-## Problema comun: "no encuentra POM"
-
-Si ves un error de Maven indicando que no hay `pom.xml`, estas ejecutando en la carpeta incorrecta.
-Debes ejecutar los comandos dentro de:
-
-`.../opengl-java-class/opengl-java-class`
+- Refactor de un solo archivo a 6 clases con responsabilidades separadas.
+- Shader extendido con rotación y degradados.
+- Pájaro compuesto reemplazando el rectángulo amarillo.
+- Soporte real de 2 jugadores con física y puntaje independiente.
+- Sistema de dificultad por niveles y HUD con dígitos sin depender de fuentes.
+- Fondo con degradado, nubes con parallax, sol, suelo con pasto y pantallas de inicio / game over.
