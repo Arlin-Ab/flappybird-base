@@ -4,7 +4,7 @@ Proyecto del primer parcial. Mini-juego estilo Flappy Bird hecho con **Java + LW
 
 ## Integrantes
 
-- Arlin Manuel
+- Arlin Nuñez Chavez
 
 ## Características
 
